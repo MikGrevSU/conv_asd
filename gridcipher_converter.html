@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>GridCipher — свой цифровой шифр</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#eef2ff;background:#0c1020;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 10% 0%,#182455 0,transparent 46%),radial-gradient(ellipse at 95% 100%,#1b1847 0,transparent 38%),#0c1020}
+main{max-width:1120px;margin:0 auto;padding:44px 20px 70px}
+.logo{display:flex;align-items:center;gap:12px;color:#a8b5ff;text-transform:uppercase;letter-spacing:3px;font-size:12px;font-weight:800}.logo-icon{height:38px;width:38px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#8192ff,#a371e8);color:#10162e;font-size:19px;letter-spacing:0}
+h1{font-size:clamp(34px,5vw,56px);letter-spacing:-2px;line-height:1.1;margin:22px 0 12px}.sub{max-width:690px;color:#aab3d1;font-size:16px;line-height:1.65;margin:0 0 28px}.accent{color:#9baaff}
+.panel{border:1px solid #303958;border-radius:22px;background:rgba(23,29,50,.91);padding:23px;box-shadow:0 16px 48px #0004;min-width:0}
+.grid-main{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:18px;align-items:start}
+.head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}.head h2{margin:0;font-size:18px}.pill{font-size:12px;border-radius:999px;color:#bdc7ff;border:1px solid #435080;padding:7px 11px;background:#273157}
+.controls{display:grid;grid-template-columns:1.15fr .85fr .85fr;gap:12px;margin-bottom:17px}
+label{font-size:12px;color:#b6bed5;font-weight:700;display:flex;gap:9px;flex-direction:column}
+select,textarea{font:inherit;width:100%;background:#11182b;border:1px solid #3a4461;color:#f2f4ff;border-radius:12px;outline:none;transition:border-color .2s,box-shadow .2s}
+select{padding:12px 11px;min-height:47px;cursor:pointer}select:focus,textarea:focus{border-color:#8b9bff;box-shadow:0 0 0 3px #7089ff23}
+.segment{display:flex;background:#11172a;border-radius:13px;padding:5px;gap:4px;margin:4px 0 19px;border:1px solid #313b58}
+.segment button{width:50%;border:0;background:transparent;color:#9daacb;border-radius:10px;padding:12px 8px;font-size:13px;font-weight:750;cursor:pointer}.segment button.active{background:#36447b;color:#fff;box-shadow:0 1px 8px #0003}
+.input-label{font-size:13px;color:#c4cde4;display:block;margin:0 0 9px;font-weight:700}
+textarea{padding:16px;min-height:139px;resize:vertical;font-size:16px;line-height:1.6;letter-spacing:.15px}
+.result{margin:14px 0 0;border:1px solid #3c4976;background:#111a34;border-radius:15px;padding:17px;min-height:127px;position:relative}
+.result-h{color:#a9b7db;font-size:12px;font-weight:750;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px}
+#output{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font:600 15px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;color:#ecf0ff;min-height:43px;user-select:all}
+#output.error{color:#ffacb1}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.btn{border:1px solid #485477;border-radius:11px;padding:11px 15px;background:#263454;color:#e1e8ff;cursor:pointer;font-weight:700;font-size:13px;transition:transform .15s,background .15s}.btn:hover{background:#354672}.btn:active{transform:scale(.97)}.btn.primary{background:#7e90ff;border-color:#7e90ff;color:#09102b}.btn.primary:hover{background:#a2aeff}.btn:disabled{opacity:.4;cursor:not-allowed}
+.tip{font-size:12px;color:#98a7cb;line-height:1.6;margin:17px 0 0}
+#table-scroll{overflow:auto;padding:3px 2px 10px}
+.matrix{display:grid;gap:7px;width:max-content;min-width:100%;align-items:stretch}
+.coord{display:grid;place-items:center;min-width:38px;min-height:48px;font-size:12px;color:#91a0c8;font-weight:800}
+.cell{background:#262f4a;border:1px solid #3a4767;border-radius:11px;min-width:49px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cell b{font-size:20px;font-weight:750;line-height:1.2}.cell small{font-size:10px;color:#90a3dd;font-family:ui-monospace,Consolas,monospace}.cell.special{background:#303453;border-color:#55507b}.cell.empty{opacity:.28}.cell.empty b{color:#64708e}
+.details{border-top:1px solid #343d5a;margin-top:14px;padding-top:14px}.details p{font-size:13px;color:#b6c0dc;line-height:1.7;margin:8px 0}.details code{color:#c6ccff;background:#283154;padding:2px 5px;border-radius:4px}
+#notice{margin-top:9px;font-size:12px;min-height:20px;color:#a5b5e4}#notice.bad{color:#ffadb6}
+footer{margin-top:22px;color:#7784a6;font-size:12px;line-height:1.6}
+@media(max-width:850px){.grid-main{grid-template-columns:1fr}.panel{padding:18px}.matrix{min-width:unset}main{padding-top:28px}}
+@media(max-width:430px){.controls{grid-template-columns:1fr 1fr}.controls label:first-child{grid-column:1 / -1}.cell{min-width:44px}h1{letter-spacing:-1.2px}}
+</style>
+</head>
+<body>
+<main>
+<div class="logo"><span class="logo-icon">#</span> DIGITAL GRID CODE</div>
+<h1>Слова <span class="accent">в цифрах.</span></h1>
+<p class="sub">Наш конвертер: выбирай язык и размер таблицы, вводи текст или цифровой код. Каждая буква превращается в пару координат — без сервера, ключей и регистрации.</p>
+<div class="grid-main">
+<section class="panel" aria-label="Конвертер">
+<div class="head"><h2>Конвертер</h2><span class="pill" id="format-pill">EN(5,6)</span></div>
+<div class="controls">
+<label>Язык<select id="lang"><option value="EN">EN — English</option><option value="RU">RU — Русский</option><option value="KZ">KZ — Қазақша</option></select></label>
+<label>Столбцы<select id="cols"></select></label>
+<label>Строки<select id="rows"></select></label>
+</div>
+<div class="segment" role="group" aria-label="Направление конвертации">
+<button type="button" id="mode-encode" class="active" aria-pressed="true">Текст → Код</button>
+<button type="button" id="mode-decode" aria-pressed="false">Код → Текст</button>
+</div>
+<label class="input-label" for="input" id="input-label">Введите предложение</label>
+<textarea id="input" spellcheck="false" placeholder="HELLO WORLD!">HELLO WORLD!</textarea>
+<div class="result" aria-live="polite"><div class="result-h"><span id="output-label">Зашифрованное сообщение</span><span id="char-count"></span></div><pre id="output"></pre></div>
+<div id="notice"></div>
+<div class="actions"><button type="button" class="btn primary" id="copy">⧉ Копировать</button><button type="button" class="btn" id="swap">⇄ Наоборот</button><button type="button" class="btn" id="example">Пример</button><button type="button" class="btn" id="download">↓ Скачать TXT</button></div>
+<p class="tip">Регистр букв при кодировании приводится к верхнему. Цифры записываются в скобках, например <code>(2026)</code>. Непоместившиеся в таблицу знаки передаются как <code>(!)</code>.</p>
+</section>
+<aside class="panel" aria-label="Таблица координат">
+<div class="head"><h2>Таблица букв</h2><span class="pill" id="capacity"></span></div>
+<div id="table-scroll"><div class="matrix" id="matrix"></div></div>
+<div class="details"><p><b>Как читать:</b> первая цифра — номер строки, вторая — номер столбца. Например, <code>23</code> в таблице EN(5,6) = <b>H</b>.</p><p><b>Порядок символов:</b> буквы алфавита, затем пробел, точка, запятая, вопросительный и восклицательный знаки — сколько поместится. Остальные символы заключаются в круглые скобки.</p><p id="capacity-note"></p></div>
+</aside>
+</div>
+<footer>GridCipher v1 · Учебный цифровой код. Позволяет скрыть читаемый текст от случайного взгляда, но не защищает сообщения криптографически.</footer>
+</main>
+<script>
+'use strict';
+const ALPHABETS = Object.freeze({
+  EN:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  RU:'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
+  KZ:'АӘБВГҒДЕЁЖЗИЙКҚЛМНҢОӨПРСТУҰҮФХҺЦЧШЩЪЫІЬЭЮЯ'
+});
+const SPECIAL = [' ','.',',','?','!'];
+const DEFAULTS={EN:[5,6],RU:[6,6],KZ:[7,7]};
+const EXAMPLES={EN:'HELLO WORLD! 2026',RU:'ПРИВЕТ, МИР! 2026',KZ:'СӘЛЕМ, ӘЛЕМ! 2026'};
+const $=id=>document.getElementById(id);
+const inputs={lang:$('lang'),cols:$('cols'),rows:$('rows'),text:$('input')};
+let mode='encode',currentOutput='',isError=false;
+for(let n=1;n<=9;n++)for(const id of ['cols','rows']){const el=document.createElement('option');el.value=String(n);el.textContent=String(n);inputs[id].append(el)}
+inputs.cols.value='5';inputs.rows.value='6';
+function makeTable(lang,cols,rows){
+  const alphabet=ALPHABETS[lang];
+  if(!alphabet)throw Error('Неизвестный язык: '+lang);
+  if(!Number.isInteger(cols)||!Number.isInteger(rows)||cols<1||cols>9||rows<1||rows>9)throw Error('Строки и столбцы должны быть от 1 до 9.');
+  if(cols*rows<alphabet.length)throw Error(`Таблица ${cols}×${rows} вмещает ${cols*rows} ячеек, а в алфавите ${lang} — ${alphabet.length} букв. Увеличьте размер.`);
+  const symbols=[...alphabet,...SPECIAL].slice(0,cols*rows);
+  const byChar=new Map(symbols.map((v,i)=>[v,String(Math.floor(i/cols)+1)+String(i%cols+1)]));
+  return {lang,cols,rows,alphabet,symbols,byChar};
+}
+function encodeText(input,table){
+  const result=[];let digits='';
+  function flushDigits(){if(digits){result.push('('+digits+')');digits=''}}
+  for(const c of input.toUpperCase()){
+    if(c>='0'&&c<='9'){digits+=c;continue}
+    flushDigits();
+    if(table.byChar.has(c)){result.push(table.byChar.get(c));continue}
+    if(c==='('||c===')'||c==='\\'||c==='\n'||c==='\r'||c==='\t'){
+      result.push('(U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')+')');
+    }else{result.push('('+c+')')}
+  }
+  flushDigits();
+  return `${table.lang}(${table.cols},${table.rows}):`+result.join('');
+}
+function findHeader(text){
+  const m=text.trim().match(/^(EN|RU|KZ)\(([1-9]),([1-9])\):/i);
+  return m?{lang:m[1].toUpperCase(),cols:Number(m[2]),rows:Number(m[3]),length:m[0].length}:null;
+}
+function decodeText(text,fallbackTable){
+  text=text.trim();const header=findHeader(text);
+  const table=header?makeTable(header.lang,header.cols,header.rows):fallbackTable;
+  const body=header?text.slice(header.length):text;
+  let output='';
+  for(let i=0;i<body.length;){
+    if(body[i]==='('){
+      const end=body.indexOf(')',i+1);
+      if(end===-1)throw Error(`Незакрытая скобка в позиции ${i+1}.`);
+      const token=body.slice(i+1,end);
+      const unicode=token.match(/^U\+([0-9A-F]{4,6})$/i);
+      if(unicode){const cp=parseInt(unicode[1],16);if(cp>0x10FFFF||cp>=0xD800&&cp<=0xDFFF)throw Error('Некорректный Unicode-код.');output+=String.fromCodePoint(cp)}
+      else output+=token;
+      i=end+1;continue;
+    }
+    if(!/^[1-9]$/.test(body[i]))throw Error(`Ожидалась координата или скобка в позиции ${i+1}.`);
+    if(i+1>=body.length||!(/^[1-9]$/.test(body[i+1])))throw Error(`Неполная пара цифр в позиции ${i+1}.`);
+    const row=Number(body[i]),col=Number(body[i+1]);
+    if(row>table.rows||col>table.cols)throw Error(`Координата ${body.slice(i,i+2)} выходит за пределы таблицы ${table.cols}×${table.rows}.`);
+    const ch=table.symbols[(row-1)*table.cols+(col-1)];
+    if(ch===undefined)throw Error(`Координата ${body.slice(i,i+2)} указывает на пустую ячейку.`);
+    output+=ch;i+=2;
+  }
+  return {output,table};
+}
+function readTable(){return makeTable(inputs.lang.value,Number(inputs.cols.value),Number(inputs.rows.value))}
+function syncSettingsFromHeader(){
+  if(mode==='decode'){
+    const header=findHeader(inputs.text.value);
+    if(header){inputs.lang.value=header.lang;inputs.cols.value=String(header.cols);inputs.rows.value=String(header.rows)}
+  }
+}
+function renderTable(table){
+  const matrix=$('matrix');matrix.replaceChildren();
+  matrix.style.gridTemplateColumns=`37px repeat(${table.cols}, minmax(49px, 1fr))`;
+  const add=(text,cl)=>{const div=document.createElement('div');div.className=cl;div.textContent=text;matrix.append(div)};
+  add('↘','coord');for(let col=1;col<=table.cols;col++)add(String(col),'coord');
+  for(let row=1;row<=table.rows;row++){
+    add(String(row),'coord');
+    for(let col=1;col<=table.cols;col++){
+      const index=(row-1)*table.cols+(col-1),symbol=table.symbols[index];
+      const div=document.createElement('div');div.className='cell'+(index>=table.alphabet.length?' special':'')+(symbol===undefined?' empty':'');
+      const value=document.createElement('b');value.textContent=symbol===undefined?'—':symbol===' '?'␣':symbol;
+      const code=document.createElement('small');code.textContent=String(row)+String(col);div.append(value,code);matrix.append(div);
+    }
+  }
+  $('capacity').textContent=table.cols*table.rows+' ячеек';
+  const extra=Math.min(Math.max(table.cols*table.rows-table.alphabet.length,0),SPECIAL.length);
+  $('capacity-note').textContent=`Букв: ${table.alphabet.length}. Дополнительных знаков: ${extra}. Пустых клеток: ${table.cols*table.rows-table.symbols.length}.`;
+  $('format-pill').textContent=`${table.lang}(${table.cols},${table.rows})`;
+}
+function update(){
+  syncSettingsFromHeader();let output='',error=null,table;
+  try{table=readTable();renderTable(table);if(mode==='encode')output=encodeText(inputs.text.value,table);else output=decodeText(inputs.text.value,table).output}
+  catch(e){error=e.message}
+  currentOutput=error?'':output;isError=Boolean(error);
+  $('output').textContent=error||output||'—';$('output').classList.toggle('error',isError);
+  $('char-count').textContent=error?'Ошибка':output.length+' симв.';
+  $('notice').textContent=error?'Измените размер таблицы или проверьте код.':'Конвертация выполняется автоматически.';
+  $('notice').classList.toggle('bad',isError);
+  $('copy').disabled=isError||!output;$('download').disabled=isError||!output;
+}
+function setMode(v){
+  mode=v;
+  $('mode-encode').classList.toggle('active',v==='encode');$('mode-decode').classList.toggle('active',v==='decode');
+  $('mode-encode').setAttribute('aria-pressed',String(v==='encode'));
+  $('mode-decode').setAttribute('aria-pressed',String(v==='decode'));
+  $('input-label').textContent=v==='encode'?'Введите предложение':'Вставьте цифровой код';
+  $('output-label').textContent=v==='encode'?'Зашифрованное сообщение':'Расшифрованный текст';
+  inputs.text.placeholder=v==='encode'?'HELLO WORLD!':'EN(5,6):2315323235625335433214(!)';
+  update();
+}
+$('mode-encode').addEventListener('click',()=>setMode('encode'));
+$('mode-decode').addEventListener('click',()=>setMode('decode'));
+inputs.lang.addEventListener('change',()=>{const [cols,rows]=DEFAULTS[inputs.lang.value];inputs.cols.value=cols;inputs.rows.value=rows;update()});
+for(const el of [inputs.cols,inputs.rows,inputs.text])el.addEventListener(el===inputs.text?'input':'change',update);
+$('swap').addEventListener('click',()=>{if(isError)return;const previous=currentOutput;mode=mode==='encode'?'decode':'encode';inputs.text.value=previous;setMode(mode)});
+$('example').addEventListener('click',()=>{const lang=inputs.lang.value;const example=EXAMPLES[lang];try{inputs.text.value=mode==='encode'?example:encodeText(example,readTable());update()}catch(e){update()}});
+$('copy').addEventListener('click',async()=>{
+  if(isError)return;
+  try{await navigator.clipboard.writeText(currentOutput)}catch(_){
+    const t=document.createElement('textarea');t.value=currentOutput;t.style.position='fixed';t.style.opacity='0';document.body.append(t);t.select();document.execCommand('copy');t.remove();
+  }
+  const b=$('copy'),old=b.textContent;b.textContent='✓ Скопировано';setTimeout(()=>b.textContent=old,1400);
+});
+$('download').addEventListener('click',()=>{
+  if(isError)return;const blob=new Blob([currentOutput],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=mode==='encode'?'gridcipher_code.txt':'gridcipher_text.txt';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+});
+update();
+</script>
+</body>
+</html>
